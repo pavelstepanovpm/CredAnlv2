@@ -1,0 +1,273 @@
+/* Trading Terminal Dark Theme */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Trading terminal specific styles */
+.trading-terminal {
+  background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+  min-height: 100vh;
+}
+
+.metric-card {
+  background: linear-gradient(135deg, #2d2d2d 0%, #404040 100%);
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #00ff00;
+  margin: 0;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #cccccc;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 4px 0 0 0;
+}
+
+.chart-container {
+  background-color: #2d2d2d;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #555;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.status-active {
+  color: #00ff00;
+}
+
+.status-draft {
+  color: #ffaa00;
+}
+
+.status-archived {
+  color: #666666;
+}
+
+.btn-trading {
+  background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-trading:hover {
+  background: linear-gradient(135deg, #0088ff 0%, #0066cc 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.btn-trading:active {
+  transform: translateY(0);
+}
+
+.table-trading {
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-trading th {
+  background-color: #404040;
+  color: #ffffff;
+  border-color: #555;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+}
+
+.table-trading td {
+  border-color: #555;
+  padding: 12px 16px;
+}
+
+.table-trading tbody tr:hover {
+  background-color: #404040;
+}
+
+.sidebar {
+  background: linear-gradient(180deg, #2d2d2d 0%, #1e1e1e 100%);
+  border-right: 1px solid #404040;
+  height: 100vh;
+  overflow-y: auto;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 280px;
+  z-index: 1000;
+}
+
+.main-content {
+  margin-left: 280px;
+  padding: 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+}
+
+.nav-link-trading {
+  color: #cccccc !important;
+  padding: 12px 20px !important;
+  border-radius: 4px !important;
+  margin: 4px 0 !important;
+  transition: all 0.3s ease !important;
+  text-decoration: none !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.nav-link-trading:hover {
+  background-color: #404040 !important;
+  color: #ffffff !important;
+  transform: translateX(4px);
+}
+
+.nav-link-trading.active {
+  background-color: #0066cc !important;
+  color: #ffffff !important;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 16px;
+  }
+}
+
+/* Loading spinner */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #404040;
+  border-radius: 50%;
+  border-top-color: #0066cc;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Status indicators */
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-indicator.active {
+  background-color: #00ff00;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+}
+
+.status-indicator.warning {
+  background-color: #ffaa00;
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+}
+
+.status-indicator.danger {
+  background-color: #ff0000;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
