@@ -31,7 +31,7 @@ def check_repo_exists():
     """Проверить существование репозитория на GitHub"""
     print("🔍 Проверка существования репозитория на GitHub...")
     
-    success, _ = run_command(
+    success = run_command(
         "git ls-remote https://github.com/pavelstepanovpm/credanlv2.git",
         "Проверка репозитория"
     )
@@ -50,7 +50,7 @@ def push_to_github():
     
     # Проверить подключение
     print("🔍 Проверка подключения к GitHub...")
-    success, _ = run_command("git remote -v", "Проверка удаленных репозиториев")
+    success = run_command("git remote -v", "Проверка удаленных репозиториев")
     if not success:
         print("❌ Удаленный репозиторий не настроен")
         return False
@@ -66,7 +66,7 @@ def push_to_github():
     
     for branch in branches:
         print(f"\n📤 Отправка {branch} ветки...")
-        success, _ = run_command(f"git push origin {branch}", f"Отправка {branch} ветки")
+        success = run_command(f"git push origin {branch}", f"Отправка {branch} ветки")
         if not success:
             print(f"⚠️  {branch} ветка не отправлена (возможно, уже существует)")
     
@@ -83,20 +83,14 @@ def verify_upload():
     print("\n🔍 Проверка загрузки...")
     
     # Проверить ветки
-    success, output = run_command("git branch -r", "Проверка удаленных веток")
+    success = run_command("git branch -r", "Проверка удаленных веток")
     if success:
-        print("✅ Ветки загружены:")
-        for line in output.split('\n'):
-            if 'origin/' in line:
-                print(f"   {line.strip()}")
+        print("✅ Ветки загружены")
     
     # Проверить теги
-    success, output = run_command("git tag -l", "Проверка тегов")
+    success = run_command("git tag -l", "Проверка тегов")
     if success:
-        print("✅ Теги загружены:")
-        for tag in output.split('\n'):
-            if tag.strip():
-                print(f"   {tag.strip()}")
+        print("✅ Теги загружены")
     
     return True
 
