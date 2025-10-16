@@ -15,6 +15,7 @@ import { MetricCard } from '../components/MetricCard';
 import { CashflowChart } from '../components/CashflowChart';
 import { UtilizationChart } from '../components/UtilizationChart';
 import { VersionsPanel } from '../components/VersionsPanel';
+import { CovenantBadge } from '../components/CovenantBadge';
 
 export const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -96,6 +97,34 @@ export const Dashboard: React.FC = () => {
             <MetricCard {...metric} />
           </Grid>
         ))}
+      </Grid>
+
+      {/* Covenant Badge */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={4}>
+          <CovenantBadge
+            level="good"
+            value={78.5}
+            target={80}
+            trend="up"
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <CovenantBadge
+            level="excellent"
+            value={92.3}
+            target={90}
+            trend="stable"
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <CovenantBadge
+            level="fair"
+            value={65.2}
+            target={70}
+            trend="down"
+          />
+        </Grid>
       </Grid>
 
       {/* Charts Row */}
