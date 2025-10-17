@@ -5,7 +5,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - DATABASE_URL=postgresql://credit_user:credit_pass@db:5432/credit_analytics
       - REDIS_URL=redis://redis:6379
@@ -22,7 +22,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "3002:80"
     depends_on:
       - backend
     networks:
@@ -39,7 +39,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - credit-network
 
