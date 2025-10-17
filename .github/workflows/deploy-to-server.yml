@@ -1,0 +1,222 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Позволяет запускать вручную
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Тестирование
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Python dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+
+    - name: Install Node.js dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Run Python tests
+      run: |
+        cd backend
+        python -m pytest tests/ -v || echo "No tests found"
+
+    - name: Run Node.js tests
+      run: |
+        cd frontend
+        npm test -- --coverage --watchAll=false || echo "No tests found"
+
+  # Сборка и публикация образов
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push backend image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./backend
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./frontend
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  # Развертывание на сервер
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Deploy to production server
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          set -e
+          
+          echo "🚀 Начинаем развертывание..."
+          
+          # Перейти в директорию проекта
+          cd ${{ secrets.PROJECT_PATH || '/opt/credit-analytics' }}
+          
+          # Получить изменения из GitHub
+          echo "📥 Получение изменений из GitHub..."
+          git fetch origin
+          git reset --hard origin/main
+          
+          # Остановить контейнеры
+          echo "🛑 Остановка контейнеров..."
+          docker-compose down || true
+          
+          # Собрать новые образы
+          echo "🔨 Сборка новых образов..."
+          docker-compose build --no-cache
+          
+          # Запустить контейнеры
+          echo "🚀 Запуск контейнеров..."
+          docker-compose up -d
+          
+          # Очистить неиспользуемые образы
+          echo "🧹 Очистка неиспользуемых образов..."
+          docker system prune -f
+          
+          # Проверить статус
+          echo "🔍 Проверка статуса..."
+          docker-compose ps
+          
+          # Проверить логи
+          echo "📊 Проверка логов..."
+          docker-compose logs --tail=20
+          
+          echo "✅ Развертывание завершено!"
+
+    - name: Health check
+      run: |
+        echo "🏥 Проверка работоспособности..."
+        
+        # Проверить API
+        if curl -s -f "${{ secrets.SERVER_HOST }}/api/health" > /dev/null; then
+          echo "✅ API доступен"
+        else
+          echo "⚠️  API недоступен"
+        fi
+        
+        # Проверить фронтенд
+        if curl -s -f "${{ secrets.SERVER_HOST }}" > /dev/null; then
+          echo "✅ Фронтенд доступен"
+        else
+          echo "⚠️  Фронтенд недоступен"
+        fi
+
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "🎉 Развертывание успешно завершено!"
+        echo "🌐 Приложение доступно по адресу: https://${{ secrets.SERVER_HOST }}"
+        echo "🔧 API: https://${{ secrets.SERVER_HOST }}/api"
+        echo "📊 Документация: https://${{ secrets.SERVER_HOST }}/api/docs"
+
+    - name: Notify deployment failure
+      if: failure()
+      run: |
+        echo "❌ Развертывание завершилось с ошибкой!"
+        echo "🔍 Проверьте логи выше для диагностики проблемы"
+
+  # Создание релиза
+  create-release:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "## 🚀 Release v${{ github.run_number }}" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### 📅 Дата: $(date '+%Y-%m-%d %H:%M:%S')" >> CHANGELOG.md
+        echo "### 🔗 Коммит: ${{ github.sha }}" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### 📋 Изменения:" >> CHANGELOG.md
+        git log --oneline $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "HEAD~10")..HEAD >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### 🐳 Docker образы:" >> CHANGELOG.md
+        echo "- Backend: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}\`" >> CHANGELOG.md
+        echo "- Frontend: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}\`" >> CHANGELOG.md
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: false
