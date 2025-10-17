@@ -68,6 +68,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         {/* Title */}
         <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
           Аналитика кредитного портфеля
+          <Chip 
+            label="CI/CD" 
+            size="small" 
+            sx={{ 
+              ml: 2, 
+              backgroundColor: '#4caf50', 
+              color: '#ffffff',
+              fontSize: '0.7rem',
+              height: 20
+            }} 
+          />
         </Typography>
 
         {/* Status Info */}
