@@ -1,0 +1,120 @@
+name: Build and Deploy Docker Images
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push backend image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./backend
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./frontend
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Generate deployment manifest
+      run: |
+        cat > deployment.yml << EOF
+        version: '3.8'
+        services:
+          backend:
+            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
+            ports:
+              - "8000:8000"
+            environment:
+              - DATABASE_URL=postgresql://user:pass@db:5432/creditdb
+              - REDIS_URL=redis://redis:6379
+            depends_on:
+              - db
+              - redis
+
+          frontend:
+            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+            ports:
+              - "3000:80"
+            depends_on:
+              - backend
+
+          db:
+            image: postgres:13-alpine
+            environment:
+              POSTGRES_DB: creditdb
+              POSTGRES_USER: user
+              POSTGRES_PASSWORD: pass
+            volumes:
+              - postgres_data:/var/lib/postgresql/data
+
+          redis:
+            image: redis:6-alpine
+            volumes:
+              - redis_data:/data
+
+        volumes:
+          postgres_data:
+          redis_data:
+        EOF
+
+    - name: Upload deployment manifest
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-manifest
+        path: deployment.yml
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying to production..."
+        echo "Backend image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}"
+        echo "Frontend image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}"
+        # Здесь можно добавить команды для развертывания на продакшн сервере
