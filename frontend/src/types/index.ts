@@ -265,3 +265,11 @@ export interface SearchOptions {
   pageSize: number;
 }
 
+// Демо интерфейс для показа Git workflow
+export interface DemoData {
+  id: string;
+  name: string;
+  value: number;
+  timestamp: string;
+}
+
