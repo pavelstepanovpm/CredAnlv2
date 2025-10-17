@@ -47,9 +47,8 @@ jobs:
   # Сборка и публикация Docker образов
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: [test]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && needs.test.result == 'success'))
+    needs: [test]
     
     permissions:
       contents: read
