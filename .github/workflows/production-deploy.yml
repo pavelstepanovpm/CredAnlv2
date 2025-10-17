@@ -15,7 +15,7 @@ jobs:
   # Тестирование
   test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: 📥 Checkout code
@@ -49,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: [test]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && needs.test.result == 'success'))
     
     permissions:
       contents: read
@@ -102,7 +103,7 @@ jobs:
   # Развертывание на продакшен сервер
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && needs.build-and-push.result == 'success'))
     needs: [build-and-push]
     
     environment: production
